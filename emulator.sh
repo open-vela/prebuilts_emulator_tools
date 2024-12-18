@@ -21,7 +21,12 @@ fi
 EMULATOR_DIR="${TOP_DIR}/prebuilts/emulator/${HOST_OS}-${HOST_ARCH}"
 EMULATOR_BIN="${EMULATOR_DIR}/emulator"
 
-TARGETDIR=${TOP_DIR}/vendor/openvela/boards/$1
+if test -d ${TOP_DIR}/vendor/qemu; then
+  TARGETDIR=${TOP_DIR}/vendor/qemu/boards/$1
+else
+  TARGETDIR=${TOP_DIR}/vendor/openvela/boards/$1
+fi
+
 echo "TARGETDIR = ${TARGETDIR}"
 shift
 
