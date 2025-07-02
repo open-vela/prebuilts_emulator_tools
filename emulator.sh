@@ -34,23 +34,35 @@ usage()
 # for out-of-tree artifacts
 if test -e "$1/.config"; then
   OUT_DIR="$1"
+  shift
+  if grep -q '^CONFIG_ARCH_ARM=y' ${OUT_DIR}/.config; then
+    QEMU_ARCH="arm"
+  elif grep -q '^CONFIG_ARCH_ARM64=y' ${OUT_DIR}/.config; then
+    QEMU_ARCH="aarch64"
+  elif grep -q '^CONFIG_ARCH_X86=y' ${OUT_DIR}/.config; then
+    QEMU_ARCH="i386"
+  elif grep -q '^CONFIG_ARCH_X86_64=y' ${OUT_DIR}/.config; then
+    QEMU_ARCH="x86_64"
+  elif grep -q '^CONFIG_ARCH_RISCV=y' ${OUT_DIR}/.config; then
+    QEMU_ARCH="riscv32"
+  fi
   if grep -q '^CONFIG_ARCH_CHIP_QEMU=y' ${OUT_DIR}/.config; then
-    if grep -q '^CONFIG_ARCH_ARM=y' ${OUT_DIR}/.config; then
-      QEMU_ARCH="arm"
-    elif grep -q '^CONFIG_ARCH_ARM64=y' ${OUT_DIR}/.config; then
-      QEMU_ARCH="aarch64"
-    elif grep -q '^CONFIG_ARCH_X86=y' ${OUT_DIR}/.config; then
-      QEMU_ARCH="i386"
-    elif grep -q '^CONFIG_ARCH_X86_64=y' ${OUT_DIR}/.config; then
-      QEMU_ARCH="x86_64"
-    elif grep -q '^CONFIG_ARCH_RISCV=y' ${OUT_DIR}/.config; then
-      QEMU_ARCH="riscv32"
-    fi
     EMULATOR_DIR="${TOP_DIR}/prebuilts/qemu/${HOST_OS}-${HOST_ARCH}"
     EMULATOR_BIN="${EMULATOR_DIR}/bin/qemu-system-${QEMU_ARCH}"
     EMULATOR_ARGS="-L ${EMULATOR_DIR}/share/qemu -kernel ${OUT_DIR}/nuttx $(cat ${OUT_DIR}/qemu_args.txt)"
     echo "RUN ${EMULATOR_BIN} ${EMULATOR_ARGS}"
     ${EMULATOR_BIN} ${EMULATOR_ARGS}
+  elif grep -q '^CONFIG_ARCH_CHIP_GOLDFISH=y' ${OUT_DIR}/.config; then
+    mkdir -p ${OUT_DIR}/system
+    echo "ro.product.cpu.abi=${QEMU_ARCH}" | sed 's/aarch64/arm64/g' > ${OUT_DIR}/system/build.prop
+    export ANDROID_EMULATOR_VELA=true
+    export ANDROID_BUILD_TOP=${TOP_DIR}
+    export ANDROID_PRODUCT_OUT=${OUT_DIR}
+    if [[ "${QEMU_ARCH}" = "x86"* ]]; then
+      EMULATOR_EXTRA_ARGS="-qemu -cpu Skylake-Client,-hle,-rtm,-mpx"
+    fi
+    echo ${EMULATOR_BIN} -show-kernel -verbose $@ ${EMULATOR_EXTRA_ARGS}
+    ${EMULATOR_BIN} -show-kernel -verbose $@ ${EMULATOR_EXTRA_ARGS}
   fi
 # for deprecated method
 else
