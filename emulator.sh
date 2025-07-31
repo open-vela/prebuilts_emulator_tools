@@ -52,7 +52,7 @@ if test -e "$1/.config"; then
     EMULATOR_ARGS="-L ${EMULATOR_DIR}/share/qemu -kernel ${OUT_DIR}/nuttx $(cat ${OUT_DIR}/qemu_args.txt)"
     echo "RUN ${EMULATOR_BIN} ${EMULATOR_ARGS}"
     ${EMULATOR_BIN} ${EMULATOR_ARGS}
-  elif grep -q '^CONFIG_ARCH_CHIP_GOLDFISH=y' ${OUT_DIR}/.config; then
+  elif grep -Eq '^CONFIG_ARCH_CHIP_GOLDFISH_(ARM|ARM64|X86_64)=y' ${OUT_DIR}/.config; then
     mkdir -p ${OUT_DIR}/system
     echo "ro.product.cpu.abi=${QEMU_ARCH}" | sed 's/aarch64/arm64/g' > ${OUT_DIR}/system/build.prop
     export ANDROID_EMULATOR_VELA=true
