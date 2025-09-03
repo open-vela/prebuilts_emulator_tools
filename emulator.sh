@@ -97,6 +97,8 @@ if test -e "$1/.config"; then
     export EMULATOR_COMMON_ARGS="-show-kernel -verbose"
     if [[ "${QEMU_ARCH}" = "x86"* ]]; then
       EMULATOR_COMMON_ARGS="${EMULATOR_COMMON_ARGS} -qemu -cpu Skylake-Client,-hle,-rtm,-mpx"
+    else
+      EMULATOR_COMMON_ARGS="${EMULATOR_COMMON_ARGS} -qemu -device virtio-snd,bus=virtio-mmio-bus.2 -allow-host-audio"
     fi
     EMULATOR_EXTRA_ARGS="$@"
     EMULATOR_MERGED_ARGS=$(merge_args ${EMULATOR_COMMON_ARGS} ${EMULATOR_EXTRA_ARGS})
