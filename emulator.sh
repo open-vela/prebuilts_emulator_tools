@@ -31,6 +31,42 @@ usage()
   exit 1
 }
 
+merge_args()
+{
+  EMULATOR_GOLDFISH_ARGS=""
+  EMULATOR_QEMU_ARGS=""
+
+  found_qemu=false
+  for arg in ${EMULATOR_COMMON_ARGS}; do
+    if [ "${arg}" == "-qemu" ]; then
+        found_qemu=true
+        continue
+    fi
+
+    if ${found_qemu}; then
+        EMULATOR_QEMU_ARGS="$EMULATOR_QEMU_ARGS $arg"
+    else
+        EMULATOR_GOLDFISH_ARGS="$EMULATOR_GOLDFISH_ARGS $arg"
+    fi
+  done
+
+  found_qemu=false
+  for arg in ${EMULATOR_EXTRA_ARGS}; do
+    if [ "${arg}" == "-qemu" ]; then
+        found_qemu=true
+        continue
+    fi
+
+    if ${found_qemu}; then
+        EMULATOR_QEMU_ARGS="$EMULATOR_QEMU_ARGS $arg"
+    else
+        EMULATOR_GOLDFISH_ARGS="$EMULATOR_GOLDFISH_ARGS $arg"
+    fi
+  done
+
+  echo ${EMULATOR_GOLDFISH_ARGS} -qemu ${EMULATOR_QEMU_ARGS}
+}
+
 # for out-of-tree artifacts
 if test -e "$1/.config"; then
   OUT_DIR="$1"
@@ -58,11 +94,14 @@ if test -e "$1/.config"; then
     export ANDROID_EMULATOR_VELA=true
     export ANDROID_BUILD_TOP=${TOP_DIR}
     export ANDROID_PRODUCT_OUT=${OUT_DIR}
+    export EMULATOR_COMMON_ARGS="-show-kernel -verbose"
     if [[ "${QEMU_ARCH}" = "x86"* ]]; then
-      EMULATOR_EXTRA_ARGS="-qemu -cpu Skylake-Client,-hle,-rtm,-mpx"
+      EMULATOR_COMMON_ARGS="${EMULATOR_COMMON_ARGS} -qemu -cpu Skylake-Client,-hle,-rtm,-mpx"
     fi
-    echo ${EMULATOR_BIN} -show-kernel -verbose $@ ${EMULATOR_EXTRA_ARGS}
-    ${EMULATOR_BIN} -show-kernel -verbose $@ ${EMULATOR_EXTRA_ARGS}
+    EMULATOR_EXTRA_ARGS="$@"
+    EMULATOR_MERGED_ARGS=$(merge_args ${EMULATOR_COMMON_ARGS} ${EMULATOR_EXTRA_ARGS})
+    echo "RUN ${EMULATOR_BIN} ${EMULATOR_MERGED_ARGS}"
+    ${EMULATOR_BIN} ${EMULATOR_MERGED_ARGS}
   fi
 # for deprecated method
 else
