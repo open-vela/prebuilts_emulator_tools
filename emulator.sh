@@ -100,6 +100,11 @@ if test -e "$1/.config"; then
     else
       EMULATOR_COMMON_ARGS="${EMULATOR_COMMON_ARGS} -qemu -device virtio-snd,bus=virtio-mmio-bus.2 -allow-host-audio"
     fi
+
+    # Add a second NIC (eth0) for cellular data when WiFi SIM occupies the first NIC (wlan0)
+    if grep -q '^CONFIG_WIFI_SIM_NUMBER=' ${OUT_DIR}/.config; then
+      EMULATOR_COMMON_ARGS="${EMULATOR_COMMON_ARGS} -qemu -netdev user,id=datanet -device virtio-net-device,netdev=datanet"
+    fi
     EMULATOR_EXTRA_ARGS="$@"
     EMULATOR_MERGED_ARGS=$(merge_args ${EMULATOR_COMMON_ARGS} ${EMULATOR_EXTRA_ARGS})
     echo "RUN ${EMULATOR_BIN} ${EMULATOR_MERGED_ARGS}"
